@@ -5,47 +5,45 @@ class Account
   attr_reader :name
   attr_accessor :starting_balance, :transactions, :list_of_transactions
 
-  def initialize(name, starting_balance, transactions)
+  def initialize(name, starting_balance)
     @name = name
     @starting_balance = starting_balance.to_f
-    @transactions = transactions
-    @list_of_transactions = []
+    @transactions = []
   end
 
   def current_balance
     balance = starting_balance.to_f
-    trans_data.each do |tran|
-      balance += tran[:amount].to_f
+    transactions.each do |tran|
+      balance += tran.amount.to_f
     end
     balance.to_f
   end
 
-  def trans_data
-    list_of_transactions = []
-    transactions.each do |transaction|
-      if transaction[:account] == name
-        list_of_transactions << transaction
-      end
-    end
-    list_of_transactions
-  end
-
   def summary
     summaries = []
-    trans_data.each do |tran|
-      summaries << Transaction.new(tran).summary
+    transactions.each do |tran|
+      summaries << tran.summary
     end
     summaries
+  end
+
+  def self.load_from_csv(csv)
+    accounts = []
+    CSV.foreach(csv, headers: true, header_converters: :symbol) do |row|
+      accounts << new(row[0], row[1])
+    end
+    accounts
   end
 end
 
 class Transaction
-  attr_accessor :date, :amount, :description
+  attr_accessor :account, :date, :amount, :description
 
-  def initialize(transaction)
-    @date = transaction[:date]
-    @amount = transaction[:amount].to_f
-    @description = transaction[:description]
+  def initialize(attributes)
+    @account = attributes[:account]
+    @date = attributes[:date]
+    @amount = attributes[:amount].to_f
+    @description = attributes[:description]
   end
 
   def deposit?
@@ -61,18 +59,18 @@ class Transaction
   end
 end
 
-accounts = []
-CSV.foreach('balances.csv', headers: true, header_converters: :symbol) do |row|
-  accounts << row
-end
-bank_data = []
+accounts = Account.load_from_csv('balances.csv')
+
 CSV.foreach('bank_data.csv', headers: true, header_converters: :symbol) do |row|
-  bank_data << row
+  transaction = Transaction.new(row)
+  account = accounts.find { |a| a.name == transaction.account }
+  account.transactions << transaction
 end
+
 accounts.each do |account|
-  current_account = Account.new(account[0], account[1], bank_data)
-  puts "\n==== #{current_account.name} ===="
-  puts "Starting balance: #{current_account.starting_balance}"
-  puts "Ending balance: #{current_account.current_balance}\n\n"
-  puts current_account.summary
+  # current_account = Account.new(account[0], account[1], bank_data)
+  puts "\n==== #{account.name} ===="
+  puts "Starting balance: #{account.starting_balance}"
+  puts "Ending balance: #{account.current_balance}\n\n"
+  puts account.summary
 end
