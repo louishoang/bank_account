@@ -2,29 +2,57 @@ require 'pry'
 require 'csv'
 
 class Account
-  attr_accessor :name, :starting_balance
+  attr_accessor :name, :starting_balance, :transactions
 
-  def initialize(name, starting_balance)
+  def initialize(name, starting_balance, transactions)
     @name = name
     @starting_balance = starting_balance
+    @transactions = transactions
+
+
+  end
+
+  def trans_data
+    list_of_transactions = []
+    transactions.each do |tran|
+
+      if tran[:account] == name
+        list_of_transactions << tran
+      end
+    end
+    list_of_transactions
+  end
+
+  def current_balance
+    starting_balance
   end
 
   def summary #pass in (transaction)
+
     "Date - Amount - Type - Description"
+
   end
 end
 
 class Transaction
   attr_accessor :date, :amount, :description
 
-  def initialize(date, amount, description)
-    @date = date
-    @amount = amount
-    @description = description
+  def initialize(transaction)
+    @date = transaction[:date]
+    @amount = transaction[:amount]
+    @description = transaction[:description]
+  end
+
+  def deposit?
+    amount.to_i > 0
+  end
+
+  def type
+    deposit? ? "Deposit" : "Withdrawal"
   end
 
   def summary
-    "#{date} - #{amount} - type - #{description}"
+    "#{date} - #{amount.to_i.abs} - #{type} - #{description}"
   end
 end
 
@@ -40,17 +68,20 @@ CSV.foreach('bank_data.csv', headers: true, header_converters: :symbol) do |row|
   bank_data << row
 end
 
+
+
 accounts.each do |account|
-  account = Account.new(account[0], account[1],)
-  puts account.name
-  puts account.starting_balance
+  account = Account.new(account[0], account[1], bank_data)
+  puts "==== #{account.name} ===="
+  puts "Starting balance: #{account.starting_balance}"
+  puts "Ending balance: #{account.current_balance}"
   puts account.summary ## pass in (transaction)
 end
 
 
+abc = Transaction.new(bank_data[0])
 
-
-
+puts abc.summary
 
   #   Account.starting_balance(account)
   #   Account.ending_balance(account)
