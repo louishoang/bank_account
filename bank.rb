@@ -62,17 +62,13 @@ class Transaction
 end
 
 accounts = []
-
 CSV.foreach('balances.csv', headers: true, header_converters: :symbol) do |row|
   accounts << row
 end
-
 bank_data = []
-
 CSV.foreach('bank_data.csv', headers: true, header_converters: :symbol) do |row|
   bank_data << row
 end
-
 accounts.each do |account|
   current_account = Account.new(account[0], account[1], bank_data)
   puts "\n==== #{current_account.name} ===="
